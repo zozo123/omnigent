@@ -45,7 +45,12 @@ from urllib.parse import urlsplit
 
 from omnigent._platform import resolve_cli_binary, stable_user_id
 from omnigent.cli_invocation import cli_invocation
-from omnigent.databricks_ai_gateway import is_databricks_ai_gateway_url
+from omnigent.databricks_ai_gateway import (
+    CLAUDE_CODE_AGENT,
+    is_databricks_ai_gateway_url,
+    is_ug_route,
+    with_gateway_attribution_lines,
+)
 from omnigent.diagnostics import redact_url
 from omnigent.inner import _proc
 from omnigent.inner.bundle_skills import ensure_bundle_plugin_manifest
@@ -1279,6 +1284,11 @@ def _resolve_gateway_env(
     # that cannot negotiate betas keeps the original workaround.
     if is_databricks_ai_gateway_url(base_url):
         gateway_env["CLAUDE_CODE_USE_GATEWAY"] = "1"
+        gateway_env[_ANTHROPIC_CUSTOM_HEADERS_ENV] = with_gateway_attribution_lines(
+            gateway_env[_ANTHROPIC_CUSTOM_HEADERS_ENV],
+            CLAUDE_CODE_AGENT,
+            via_ug=is_ug_route(base_url),
+        )
     else:
         gateway_env["CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"] = "1"
     return gateway_env
